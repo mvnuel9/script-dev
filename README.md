@@ -174,6 +174,3 @@ Les versions exactes dépendent des dépôts (`apt`, Homebrew, snap/cask) et des
 
 ---
 
-## Licence
-
-Voir le dépôt Git du projet (fichier `LICENSE` s’il est présent).

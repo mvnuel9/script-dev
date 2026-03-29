@@ -13,6 +13,7 @@
 #   DEV_SKIP_POSTGRES_SETUP, POSTGRES_DEV_USER, POSTGRES_DEV_DB,
 #   DEV_INSTALL_ANDROID_SDK, ANDROID_SDK_ROOT, ANDROID_API, ANDROID_BUILD_TOOLS,
 #   ANDROID_CMDLINE_TOOLS_URL  (zip mac : commandlinetools-mac-* par défaut)
+#   DEV_ENV_FILE=/chemin/.env  — fichier à sourcer (syntaxe shell). Sinon : .env dans PWD puis macOS/.env.
 #
 # Note : Android Studio via Homebrew Cask. SDK en CLI : zip « mac », pas « linux ».
 
@@ -37,6 +38,26 @@ require_macos() {
 }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+load_dotenv_if_present() {
+  local f=""
+  if [[ -n "${DEV_ENV_FILE:-}" ]]; then
+    [[ -f "${DEV_ENV_FILE}" ]] || die "DEV_ENV_FILE pointe vers un fichier absent : ${DEV_ENV_FILE}"
+    f="${DEV_ENV_FILE}"
+  elif [[ -f "${PWD}/.env" ]]; then
+    f="${PWD}/.env"
+  else
+    local sd
+    sd="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    [[ -f "${sd}/.env" ]] && f="${sd}/.env"
+  fi
+  [[ -z "$f" ]] && return 0
+  log "Chargement du fichier d’environnement : $f"
+  set -a
+  # shellcheck source=/dev/null
+  source "$f"
+  set +a
+}
 
 ensure_brew() {
   if have_cmd brew; then
@@ -408,6 +429,7 @@ EOF
 }
 
 main() {
+  load_dotenv_if_present
   case "${1:-all}" in
     -h|--help|help)
       usage

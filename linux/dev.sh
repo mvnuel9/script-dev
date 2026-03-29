@@ -24,6 +24,8 @@
 #   ANDROID_STUDIO_INSTALL_DIR=~/android-studio — répertoire d’installation de l’archive
 #   ANDROID_STUDIO_LINUX_TARBALL_URL — URL .tar.gz Android Studio (repli si snap échoue)
 #   ANDROID_CMDLINE_TOOLS_URL     — zip des command line tools (optionnel)
+#   DEV_ENV_FILE=/chemin/.env     — fichier à sourcer (syntaxe shell : export VAR=1 ou VAR=1).
+#                                   Sinon : .env dans le répertoire courant (PWD), puis linux/.env.
 #
 # Note : snap Android Studio est privilégié sur Ubuntu ; sur Debian, l’archive Google est utilisée par défaut.
 
@@ -56,6 +58,26 @@ require_debian_family() {
 }
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+load_dotenv_if_present() {
+  local f=""
+  if [[ -n "${DEV_ENV_FILE:-}" ]]; then
+    [[ -f "${DEV_ENV_FILE}" ]] || die "DEV_ENV_FILE pointe vers un fichier absent : ${DEV_ENV_FILE}"
+    f="${DEV_ENV_FILE}"
+  elif [[ -f "${PWD}/.env" ]]; then
+    f="${PWD}/.env"
+  else
+    local sd
+    sd="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    [[ -f "${sd}/.env" ]] && f="${sd}/.env"
+  fi
+  [[ -z "$f" ]] && return 0
+  log "Chargement du fichier d’environnement : $f"
+  set -a
+  # shellcheck source=/dev/null
+  source "$f"
+  set +a
+}
 
 apt_update_once() {
   export DEBIAN_FRONTEND=noninteractive
@@ -501,6 +523,7 @@ EOF
 }
 
 main() {
+  load_dotenv_if_present
   case "${1:-all}" in
     -h|--help|help)
       usage

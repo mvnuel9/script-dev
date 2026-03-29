@@ -10,6 +10,8 @@ Scripts shell pour installer une **boîte à outils de développement** sur **Li
 | `linux/dev.sh` | Installation **modulaire** Linux : sous-commandes, variables d’environnement, SDK Android en CLI, profils shell, PostgreSQL « dev », snap / archive Android Studio, etc. |
 | `macOS/setup.sh` | Même esprit que `linux/setup.sh`, via **Homebrew**. |
 | `macOS/dev.sh` | Même esprit que `linux/dev.sh`, via **Homebrew** (casks VS Code / Android Studio, zip **mac** pour les command line tools Android, PostgreSQL géré comme utilisateur local). |
+| `.env.example` | Modèle pour un fichier **`.env`** (variables des `dev.sh`) ; copier vers `.env` (non versionné). |
+| `.gitignore` | Ignore **`.env`** (et `*.local.env`) pour ne pas les commiter. |
 
 ## Choisir un script
 
@@ -17,6 +19,20 @@ Scripts shell pour installer une **boîte à outils de développement** sur **Li
 - **Contrôle fin** (front / back / mobile seuls, SDK Android en CLI, PATH dans les profils shell, rôle Postgres `dev`) → `dev.sh` du dossier qui correspond à ton OS (`linux/dev.sh` ou `macOS/dev.sh`).
 
 Les variables d’environnement principales sont les **mêmes idées** sur Linux et macOS ; les détails et URLs spécifiques sont dans **l’en-tête** de chaque `dev.sh`.
+
+### Fichier `.env` (recommandé en local)
+
+Les scripts **`linux/dev.sh`** et **`macOS/dev.sh`** peuvent charger un fichier d’environnement **avant** d’exécuter les modes (`all`, `mobile`, etc.) :
+
+1. **`DEV_ENV_FILE`** — si cette variable est définie (y compris dans le shell avant le lancement), le chemin indiqué est **sourcé** ; le fichier doit exister, sinon le script s’arrête.
+2. Sinon, si un fichier **`.env`** existe dans le **répertoire courant** (`PWD`, en pratique souvent la racine du dépôt quand tu lances `./linux/dev.sh`), il est chargé.
+3. Sinon, si **`.env`** existe **à côté du script** (`linux/.env` ou `macOS/.env`), il est chargé.
+
+Format : **syntaxe shell** (`VAR=valeur` ou `export VAR=valeur`, lignes `#` pour les commentaires). Les variables définies dans `.env` ont la même effet que si tu les passais sur la ligne de commande.
+
+Modèle fourni : **`.env.example`** → copie-le vers **`.env`** et adapte. Le fichier **`.env`** est ignoré par Git (voir **`.gitignore`**) pour éviter de versionner des chemins ou secrets personnels.
+
+**Note :** les scripts **`setup.sh`** (simples) **ne lisent pas** `.env` ; seuls les **`dev.sh`** l’utilisent.
 
 ---
 
@@ -61,6 +77,8 @@ Enchaîne sans sous-commandes : paquets `apt`, dépôt Microsoft pour VS Code, s
 ```
 
 #### Exemples avec variables d’environnement
+
+Tu peux les mettre dans un **`.env`** à la racine du dépôt (voir la section **« Fichier `.env` »** plus haut) au lieu de les préfixer sur chaque commande.
 
 ```bash
 # SDK Android en ligne de commande + acceptation des licences Flutter
@@ -117,6 +135,8 @@ Même découpage que sous Linux, avec **Homebrew** : pas de `apt` ni de snap ; *
 
 #### Exemples avec variables d’environnement
 
+Même principe que sous Linux : un **`.env`** à la racine (ou `DEV_ENV_FILE=...`) évite de répéter les variables.
+
 ```bash
 DEV_INSTALL_ANDROID_SDK=1 DEV_ACCEPT_ANDROID_LICENSES=1 ./macOS/dev.sh mobile
 DEV_SKIP_SHELL_RC=1 ./macOS/dev.sh all
@@ -150,6 +170,7 @@ Les versions exactes dépendent des dépôts (`apt`, Homebrew, snap/cask) et des
 - **Mauvais OS** : utiliser le dossier `linux/` ou `macOS/` qui correspond à la machine.
 - **Échec réseau / 404** (archives Google, zip command line tools) : ajuster les variables d’URL dans l’en-tête de `linux/dev.sh` ou `macOS/dev.sh` (zip **linux** vs **mac**).
 - **PostgreSQL** : sous Linux, service actif et `sudo -u postgres` possible. Sous macOS / Homebrew : `brew services start postgresql` si la connexion échoue.
+- **`.env`** : syntaxe shell stricte (pas d’espace autour du `=`). En cas d’erreur au chargement, vérifie les guillemets et les variables référencées avec `set -u` actif dans le script.
 
 ---
 
